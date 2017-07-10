@@ -118,29 +118,20 @@ public:
 	client_socket_base(boost::asio::io_service& io_service_, boost::asio::ssl::context& ctx) : super(io_service_, ctx) {}
 
 	void disconnect(bool reconnect = false) {force_shutdown(reconnect);}
-	void force_shutdown(bool reconnect = false)
-	{
-		if (reconnect)
-		{
-			ST_THIS authorized_ = false;
-			super::force_shutdown(true);
-		}
-		else
-			graceful_shutdown();
-	}
+#ifdef ST_ASIO_REUSE_SSL_STREAM
+	void force_shutdown(bool reconnect = false) {ST_THIS authorized_ = false; super::force_shutdown(reconnect);}
+	void graceful_shutdown(bool reconnect = false, bool sync = true) {ST_THIS authorized_ = false; super::graceful_shutdown(reconnect, sync);}
+#else
+	void force_shutdown(bool reconnect = false) {graceful_shutdown(reconnect);}
 	void graceful_shutdown(bool reconnect = false, bool sync = true)
 	{
 		if (reconnect)
-		{
-			ST_THIS authorized_ = false;
-			super::graceful_shutdown(true, sync);
-		}
-		else
-		{
-			ST_THIS need_reconnect = false;
-			ST_THIS shutdown_ssl(sync);
-		}
+			unified_out::error_out("reconnecting mechanism is not available, please define macro ST_ASIO_REUSE_SSL_STREAM");
+
+		ST_THIS need_reconnect = false; //ignore reconnect parameter
+		ST_THIS shutdown_ssl(sync);
 	}
+#endif
 
 protected:
 	virtual bool do_start() //add handshake

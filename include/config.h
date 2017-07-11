@@ -12,9 +12,9 @@
  * license: www.boost.org/LICENSE_1_0.txt
  *
  * Known issues:
- * 1. since 1.2.0, with boost-1.49, compatible edition's st_object::is_last_async_call() cannot work properly, it is because before asio calling any callbacks, it copied
- *    the callback(not a good behaviour), this cause st_object::is_last_async_call() never return true, so objects in st_object_pool can never be reused or freed.
- *    To fix this issue, we must not define ST_ASIO_ENHANCED_STABILITY macro.
+ * 1. since 1.2.0, with boost-1.49, compatible edition's st_object::is_last_async_call() cannot work properly, it is because before asio calling any callbacks,
+ *    it copied the callback(not a good behaviour), this cause st_object::is_last_async_call() never return true, so objects in st_object_pool can never be reused
+ *    or freed. To fix this issue, we must not define ST_ASIO_ENHANCED_STABILITY macro.
  *    BTW, boost-1.61 and standard edition even with boost-1.49 don't have such issue, I'm not sure in which edition, asio fixed this defect,
  *    if you have other versions, please help me to find out the minimum version via the following steps:
  *     1. Compile demo asio_server and test_client;
@@ -25,6 +25,8 @@
  * 2. since 1.3.5 until 1.4, heartbeat function cannot work properly between windows (at least win-10) and Ubuntu (at least Ubuntu-16.04).
  * 3. since 1.3.5 until 1.4, UDP doesn't support heartbeat because UDP doesn't support OOB data.
  * 4. since 1.3.5 until 1.4, SSL doesn't support heartbeat because SSL doesn't support OOB data.
+ * 5. with old openssl (at least 0.9.7), ssl::client_socket_base and ssl_server_socket_base are not reuable, i'm not sure in which version,
+ *    they became available, seems it's 1.0.0.
  *
  * change log:
  * 2012.7.7
@@ -226,7 +228,7 @@
  *  udp::i_unpacker doesn't have this feature, it always and only support unstripped message.
  *
  * FIX:
- * Fix reconnecting mechanism in demo ssl_test.
+ * Always directly shutdown ssl::client_socket_base if macro ST_ASIO_REUSE_SSL_STREAM been defined.
  *
  * ENHANCEMENTS:
  * Truly support asio 1.11 (don't use deprecated functions and classes any more), and of course, asio 1.10 will be supported too.

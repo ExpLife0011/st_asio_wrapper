@@ -173,7 +173,7 @@ protected:
 	boost::asio::ssl::context ctx;
 };
 
-template<typename Packer, typename Unpacker, typename Server = i_server, typename Socket = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>,
+template<typename Packer, typename Unpacker, typename Server = tcp::i_server, typename Socket = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>,
 	template<typename, typename> class InQueue = ST_ASIO_INPUT_QUEUE, template<typename> class InContainer = ST_ASIO_INPUT_CONTAINER,
 	template<typename, typename> class OutQueue = ST_ASIO_OUTPUT_QUEUE, template<typename> class OutContainer = ST_ASIO_OUTPUT_CONTAINER>
 class server_socket_base : public socket<tcp::server_socket_base<Packer, Unpacker, Server, Socket, InQueue, InContainer, OutQueue, OutContainer> >
@@ -210,7 +210,7 @@ private:
 	void handle_handshake(const boost::system::error_code& ec) {super::handle_handshake(ec); if (ec) this->server.del_socket(ST_THIS shared_from_this());}
 };
 
-template<typename Socket, typename Pool = object_pool<Socket>, typename Server = i_server> class server_base : public tcp::server_base<Socket, Pool, Server>
+template<typename Socket, typename Pool = object_pool<Socket>, typename Server = tcp::i_server> class server_base : public tcp::server_base<Socket, Pool, Server>
 {
 public:
 	server_base(service_pump& service_pump_, boost::asio::ssl::context::method m) : tcp::server_base<Socket, Pool, Server>(service_pump_, m) {}

@@ -30,7 +30,6 @@ public:
 	connector_base(boost::asio::io_service& io_service_) : super(io_service_) {}
 	template<typename Arg> connector_base(boost::asio::io_service& io_service_, Arg& arg) : super(io_service_, arg) {}
 };
-
 template<typename Socket, typename Pool = object_pool<Socket> > class client_base : public multi_client_base<Socket, Pool>
 {
 public:

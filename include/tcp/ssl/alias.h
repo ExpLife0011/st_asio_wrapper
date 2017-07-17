@@ -20,18 +20,18 @@ namespace st_asio_wrapper { namespace ssl {
 template <typename Packer, typename Unpacker, typename Socket = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>,
 	template<typename, typename> class InQueue = ST_ASIO_INPUT_QUEUE, template<typename> class InContainer = ST_ASIO_INPUT_CONTAINER,
 	template<typename, typename> class OutQueue = ST_ASIO_OUTPUT_QUEUE, template<typename> class OutContainer = ST_ASIO_OUTPUT_CONTAINER>
-class connector_base : public tcp::client_socket_base<Packer, Unpacker, Socket, InQueue, InContainer, OutQueue, OutContainer>
+class connector_base : public client_socket_base<Packer, Unpacker, Socket, InQueue, InContainer, OutQueue, OutContainer>
 {
 private:
-	typedef tcp::client_socket_base<Packer, Unpacker, Socket, InQueue, InContainer, OutQueue, OutContainer> super;
+	typedef client_socket_base<Packer, Unpacker, Socket, InQueue, InContainer, OutQueue, OutContainer> super;
 
 public:
 	connector_base(boost::asio::io_service& io_service_, boost::asio::ssl::context& ctx) : super(io_service_, ctx) {}
 };
-template<typename Socket, typename Pool = object_pool<Socket> > class client_base : public tcp::multi_client_base<Socket, Pool>
+template<typename Socket, typename Pool = object_pool<Socket> > class client_base : public multi_client_base<Socket, Pool>
 {
 public:
-	client_base(service_pump& service_pump_, boost::asio::ssl::context::method m) : tcp::multi_client_base<Socket, Pool>(service_pump_, m) {}
+	client_base(service_pump& service_pump_, boost::asio::ssl::context::method m) : multi_client_base<Socket, Pool>(service_pump_, m) {}
 };
 
 }} //namespace

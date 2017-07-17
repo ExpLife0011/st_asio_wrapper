@@ -112,10 +112,10 @@ private:
 	boost::uint64_t total_bytes, send_bytes, recv_bytes;
 };
 
-class echo_client : public client_base<echo_socket>
+class echo_client : public multi_client_base<echo_socket>
 {
 public:
-	echo_client(service_pump& service_pump_) : client_base<echo_socket>(service_pump_) {}
+	echo_client(service_pump& service_pump_) : multi_client_base<echo_socket>(service_pump_) {}
 
 	statistic get_statistic()
 	{

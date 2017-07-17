@@ -210,17 +210,6 @@ private:
 	void handle_handshake(const boost::system::error_code& ec) {super::handle_handshake(ec); if (ec) this->server.del_socket(ST_THIS shared_from_this());}
 };
 
-template <typename Packer, typename Unpacker, typename Socket = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>,
-	template<typename, typename> class InQueue = ST_ASIO_INPUT_QUEUE, template<typename> class InContainer = ST_ASIO_INPUT_CONTAINER,
-	template<typename, typename> class OutQueue = ST_ASIO_OUTPUT_QUEUE, template<typename> class OutContainer = ST_ASIO_OUTPUT_CONTAINER>
-class connector_base : public tcp::client_socket_base<Packer, Unpacker, Socket, InQueue, InContainer, OutQueue, OutContainer>
-{
-private:
-	typedef client_socket_base<Packer, Unpacker, Socket, InQueue, InContainer, OutQueue, OutContainer> super;
-
-public:
-	connector_base(boost::asio::io_service& io_service_, boost::asio::ssl::context& ctx) : super(io_service_, ctx) {}
-};
 template<typename Socket, typename Pool = object_pool<Socket>, typename Server = i_server> class server_base : public tcp::server_base<Socket, Pool, Server>
 {
 public:
@@ -231,10 +220,10 @@ template<typename Socket> class single_client_base : public tcp::single_client_b
 public:
 	single_client_base(service_pump& service_pump_, boost::asio::ssl::context& ctx) : tcp::single_client_base<Socket>(service_pump_, ctx) {}
 };
-template<typename Socket, typename Pool = object_pool<Socket> > class client_base : public tcp::client_base<Socket, Pool>
+template<typename Socket, typename Pool = object_pool<Socket> > class multi_client_base : public tcp::multi_client_base<Socket, Pool>
 {
 public:
-	client_base(service_pump& service_pump_, boost::asio::ssl::context::method m) : tcp::client_base<Socket, Pool>(service_pump_, m) {}
+	multi_client_base(service_pump& service_pump_, boost::asio::ssl::context::method m) : tcp::multi_client_base<Socket, Pool>(service_pump_, m) {}
 };
 
 }} //namespace

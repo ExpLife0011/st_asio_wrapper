@@ -44,9 +44,9 @@ private:
 	boost::mutex mutex;
 };
 
-//Container must at least has the following functions:
+//Container must at least has the following functions (like list):
 // Container() and Container(size_t) constructor
-// size (must be thread safe, but doesn't have to be coherent, std::list before gcc 5 doesn't meet this requirement, boost::container::list always does)
+// size (must be thread safe, but doesn't have to be coherent, std::list before gcc 5 doesn't meet this requirement, boost::container::list does)
 // empty (must be thread safe, but doesn't have to be coherent)
 // clear
 // swap
@@ -56,7 +56,7 @@ private:
 // front
 // back
 // pop_front
-template<typename T, typename Container, typename Lockable>
+template<typename T, typename Container, typename Lockable> //thread safety depends on Container or Lockable
 class queue : public Container, public Lockable
 {
 public:
@@ -66,8 +66,9 @@ public:
 	queue(size_t capacity) : Container(capacity) {}
 
 	using Container::size;
-	using Container::clear;
-	using Container::swap;
+	using Container::empty;
+	void clear() {typename Lockable::lock_guard lock(*this); Container::clear();}
+	void swap(Container& other) {typename Lockable::lock_guard lock(*this); Container::swap(other);}
 
 	//thread safe
 	bool enqueue(const T& item) {typename Lockable::lock_guard lock(*this); return enqueue_(item);}
@@ -82,7 +83,7 @@ public:
 	bool try_dequeue_(T& item) {if (ST_THIS empty()) return false; item.swap(ST_THIS front()); ST_THIS pop_front(); return true;}
 };
 
-template<typename T, typename Container> class non_lock_queue : public queue<T, Container, dummy_lockable> //totally not thread safe
+template<typename T, typename Container> class non_lock_queue : public queue<T, Container, dummy_lockable> //thread safety depends on Container
 {
 public:
 	non_lock_queue() {}

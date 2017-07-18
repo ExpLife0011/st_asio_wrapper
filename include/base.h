@@ -139,6 +139,7 @@ public:
 protected:
 	buffer_type buffer;
 };
+typedef auto_buffer<i_buffer> replaceable_buffer;
 
 //convert '->' operation to '.' operation
 //user need to allocate object, and shared_buffer will free it
@@ -152,9 +153,6 @@ public:
 	shared_buffer() {}
 	shared_buffer(T* _buffer) {buffer.reset(_buffer);}
 	shared_buffer(buffer_type _buffer) : buffer(_buffer) {}
-	shared_buffer(const shared_buffer& other) : buffer(other.buffer) {}
-	const shared_buffer& operator=(const shared_buffer& other) {buffer = other.buffer; return *this;}
-	~shared_buffer() {clear();}
 
 	buffer_type raw_buffer() const {return buffer;}
 	void raw_buffer(T* _buffer) {buffer.reset(_buffer);}
@@ -171,9 +169,7 @@ protected:
 	buffer_type buffer;
 };
 //not like auto_buffer, shared_buffer is copyable, but auto_buffer is a bit more efficient.
-
-typedef auto_buffer<i_buffer> replaceable_buffer;
-//packer or/and unpacker used replaceable_buffer as their msg type will be replaceable.
+//packer or/and unpacker who used auto_buffer or shared_buffer as its msg type will be replaceable.
 
 //packer concept
 template<typename MsgType>
@@ -254,7 +250,7 @@ namespace udp
 		udp_msg(const boost::asio::ip::udp::endpoint& _peer_addr) : peer_addr(_peer_addr) {}
 		udp_msg(const boost::asio::ip::udp::endpoint& _peer_addr, const MsgType& msg) : MsgType(msg), peer_addr(_peer_addr) {}
 
-		using MsgType::operator =;
+		using MsgType::operator=;
 		using MsgType::swap;
 		void swap(udp_msg& other) {std::swap(peer_addr, other.peer_addr); MsgType::swap(other);}
 		void swap(boost::asio::ip::udp::endpoint& addr, MsgType& tmp_msg) {std::swap(peer_addr, addr); MsgType::swap(tmp_msg);}
@@ -288,8 +284,8 @@ struct statistic
 	static stat_time local_time() {return boost::date_time::microsec_clock<boost::posix_time::ptime>::local_time();}
 	typedef boost::posix_time::time_duration stat_duration;
 #else
-	struct dummy_duration {const dummy_duration& operator +=(const dummy_duration& other) {return *this;}}; //not a real duration, just satisfy compiler(d1 += d2)
-	struct dummy_time {dummy_duration operator -(const dummy_time& other) {return dummy_duration();}}; //not a real time, just satisfy compiler(t1 - t2)
+	struct dummy_duration {dummy_duration& operator+=(const dummy_duration& other) {return *this;}}; //not a real duration, just satisfy compiler(d1 += d2)
+	struct dummy_time {dummy_duration operator-(const dummy_time& other) {return dummy_duration();}}; //not a real time, just satisfy compiler(t1 - t2)
 
 	typedef dummy_time stat_time;
 	static stat_time local_time() {return stat_time();}
@@ -310,7 +306,7 @@ struct statistic
 		unpack_time_sum = stat_duration();
 	}
 
-	statistic& operator +=(const struct statistic& other)
+	statistic& operator+=(const struct statistic& other)
 	{
 		send_msg_sum += other.send_msg_sum;
 		send_byte_sum += other.send_byte_sum;
@@ -403,7 +399,6 @@ struct obj_with_begin_time : public T
 	obj_with_begin_time() {restart();}
 	void restart() {restart(statistic::local_time());}
 	void restart(const typename statistic::stat_time& begin_time_) {begin_time = begin_time_;}
-	using T::operator =;
 	using T::swap;
 	void swap(obj_with_begin_time& other) {T::swap(other); std::swap(begin_time, other.begin_time);}
 

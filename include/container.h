@@ -41,7 +41,7 @@ public:
 	void unlock() {mutex.unlock();}
 
 private:
-	boost::mutex mutex;
+	boost::mutex mutex; //boost::mutex is more efficient than boost::shared_mutex
 };
 
 //Container must at least has the following functions (like list):

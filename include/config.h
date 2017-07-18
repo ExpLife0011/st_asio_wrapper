@@ -228,7 +228,7 @@
  *  udp::i_unpacker doesn't have this feature, it always and only support unstripped message.
  *
  * FIX:
- * Always directly shutdown ssl::client_socket_base if macro ST_ASIO_REUSE_SSL_STREAM been defined.
+ * Fix reconnecting mechanism in demo ssl_test.
  *
  * ENHANCEMENTS:
  * Truly support asio 1.11 (don't use deprecated functions and classes any more), and of course, asio 1.10 will be supported too.
@@ -243,17 +243,40 @@
  * Use mutable_buffer and const_buffer instead of mutable_buffers_1 and const_buffers_1 if possible, this can gain some performance improvement.
  * Call force_shutdown instead of graceful_shutdown in tcp::client_base::uninit().
  *
+ * ===============================================================
+ * 2017.x.x		version 2.0.1
+ *
+ * SPECIAL ATTENTION (incompatible with old editions):
+ * i_server has been moved from st_asio_wrapper to st_asio_wrapper::tcp.
+ *
+ * HIGHLIGHT:
+ *
+ * FIX:
+ * Always directly shutdown ssl::client_socket_base if macro ST_ASIO_REUSE_SSL_STREAM been defined.
+ * Make queue::clear and swap thread-safe if possible.
+ *
+ * ENHANCEMENTS:
+ *
+ * DELETION:
+ *
+ * REFACTORING:
+ * Move all deprecated classes (connector_base, client_base, service_base) to alias.h
+ *
+ * REPLACEMENTS:
+ * Rename tcp::client_base to tcp::multi_client_base, ext::tcp::client to ext::tcp::multi_client, udp::service_base to udp::multi_service_base,
+ *  ext::udp::service to ext::udp::multi_service. Old ones are still available, but have became alias.
+ *
  */
 
-#ifndef ST_CONFIG_H_
-#define ST_CONFIG_H_
+#ifndef ST_ASIO_CONFIG_H_
+#define ST_ASIO_CONFIG_H_
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
 # pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#define ST_ASIO_VER		20000	//[x]xyyzz -> [x]x.[y]y.[z]z
-#define ST_ASIO_VERSION	"2.0.0"
+#define ST_ASIO_VER		20001	//[x]xyyzz -> [x]x.[y]y.[z]z
+#define ST_ASIO_VERSION	"2.0.1"
 
 //boost and compiler check
 #ifdef _MSC_VER
@@ -261,8 +284,8 @@
 	#define ST_THIS //workaround to make up the BOOST_AUTO's defect under vc2008 and compiler bugs before vc2012
 	#define ST_ASIO_LLF "%I64u" //format used to print 'uint_fast64_t'
 
-	#if _MSC_VER >= 1700
-		#pragma message("Your compiler is Visual C++ 11.0 or higher, you can use ascs to gain some performance improvement.")
+	#if _MSC_VER >= 1800
+		#pragma message("Your compiler is Visual C++ 12.0 (2013) or higher, you can use ascs to gain some performance improvement.")
 	#endif
 #elif defined(__GNUC__)
 	#define ST_ASIO_SF "%zu" //format used to print 'size_t'
@@ -499,4 +522,4 @@
 // this seems not a normal procedure, but it works, I believe that asio's defect caused this problem.
 //configurations
 
-#endif /* ST_CONFIG_H_ */
+#endif /* ST_ASIO_CONFIG_H_ */

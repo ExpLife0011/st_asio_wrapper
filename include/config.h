@@ -244,7 +244,7 @@
  * Call force_shutdown instead of graceful_shutdown in tcp::client_base::uninit().
  *
  * ===============================================================
- * 2017.x.x		version 2.0.1
+ * 2017.7.23	version 2.0.1
  *
  * SPECIAL ATTENTION (incompatible with old editions):
  * i_server has been moved from st_asio_wrapper to st_asio_wrapper::tcp.

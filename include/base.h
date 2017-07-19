@@ -115,8 +115,7 @@ public:
 
 //convert '->' operation to '.' operation
 //user need to allocate object, and auto_buffer will free it
-template<typename T>
-class auto_buffer : public boost::noncopyable
+template<typename T> class auto_buffer : public boost::noncopyable
 {
 public:
 	typedef T* buffer_type;
@@ -143,8 +142,7 @@ typedef auto_buffer<i_buffer> replaceable_buffer;
 
 //convert '->' operation to '.' operation
 //user need to allocate object, and shared_buffer will free it
-template<typename T>
-class shared_buffer
+template<typename T> class shared_buffer
 {
 public:
 	typedef boost::shared_ptr<T> buffer_type;

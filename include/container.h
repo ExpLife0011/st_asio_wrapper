@@ -27,6 +27,7 @@ public:
 	typedef boost::lock_guard<dummy_lockable> lock_guard;
 
 	//lockable, dummy
+	bool is_lockable() const {return false;}
 	void lock() const {}
 	void unlock() const {}
 };
@@ -37,6 +38,7 @@ public:
 	typedef boost::lock_guard<lockable> lock_guard;
 
 	//lockable
+	bool is_lockable() const {return true;}
 	void lock() {mutex.lock();}
 	void unlock() {mutex.unlock();}
 
@@ -65,6 +67,7 @@ public:
 	queue() {}
 	queue(size_t capacity) : Container(capacity) {}
 
+	bool is_thread_safe() const {return Lockable::is_lockable();}
 	using Container::size;
 	using Container::empty;
 	void clear() {typename Lockable::lock_guard lock(*this); Container::clear();}

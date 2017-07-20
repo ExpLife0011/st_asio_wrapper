@@ -247,11 +247,11 @@ namespace udp
 		udp_msg() {}
 		udp_msg(const boost::asio::ip::udp::endpoint& _peer_addr) : peer_addr(_peer_addr) {}
 		udp_msg(const boost::asio::ip::udp::endpoint& _peer_addr, const MsgType& msg) : MsgType(msg), peer_addr(_peer_addr) {}
+		udp_msg(const boost::asio::ip::udp::endpoint& _peer_addr, MsgType& msg) : peer_addr(_peer_addr) {MsgType::swap(msg);} //after this call, msg becomes empty, please note.
 
 		using MsgType::operator=;
 		using MsgType::swap;
-		void swap(udp_msg& other) {std::swap(peer_addr, other.peer_addr); MsgType::swap(other);}
-		void swap(boost::asio::ip::udp::endpoint& addr, MsgType& tmp_msg) {std::swap(peer_addr, addr); MsgType::swap(tmp_msg);}
+		void swap(udp_msg& other) {MsgType::swap(other); std::swap(peer_addr, other.peer_addr);}
 	};
 
 	template<typename MsgType>
@@ -394,10 +394,13 @@ private:
 template<typename T>
 struct obj_with_begin_time : public T
 {
-	obj_with_begin_time() {restart();}
+	obj_with_begin_time() {}
+	obj_with_begin_time(T& obj) {T::swap(obj); restart();} //after this call, obj becomes empty, please note.
+	obj_with_begin_time& operator=(T& obj) {T::swap(obj); restart(); return *this;} //after this call, msg becomes empty, please note.
+
 	void restart() {restart(statistic::local_time());}
 	void restart(const typename statistic::stat_time& begin_time_) {begin_time = begin_time_;}
-	using T::swap;
+	void swap(T& obj) {T::swap(obj); restart();}
 	void swap(obj_with_begin_time& other) {T::swap(other); std::swap(begin_time, other.begin_time);}
 
 	typename statistic::stat_time begin_time;
@@ -476,7 +479,7 @@ template<typename _Predicate> void NAME(const _Predicate& __pred) const {for (BO
 //used by both TCP and UDP
 #define SAFE_SEND_MSG_CHECK \
 { \
-	if (ST_THIS stopped() || !ST_THIS is_ready()) return false; \
+	if (!ST_THIS is_ready()) return false; \
 	boost::this_thread::sleep(boost::get_system_time() + boost::posix_time::milliseconds(50)); \
 }
 
@@ -506,21 +509,15 @@ TCP_SEND_MSG_CALL_SWITCH(FUNNAME, bool)
 #define TCP_SYNC_SEND_MSG(FUNNAME, NATIVE) \
 size_t FUNNAME(const char* const pstr[], const size_t len[], size_t num, bool can_overflow = false) \
 { \
-	if (!ST_THIS sending && !ST_THIS stopped() && ST_THIS is_ready()) \
+	if (ST_THIS lock_sending_flag()) \
 	{ \
-		scope_atomic_lock<> lock(ST_THIS send_atomic); \
-		if (!ST_THIS sending && lock.locked()) \
-		{ \
-			ST_THIS sending = true; \
-			lock.unlock(); \
-			auto_duration dur(ST_THIS stat.pack_time_sum); \
-			in_msg_type msg; \
-			ST_THIS packer_->pack_msg(msg, pstr, len, num, NATIVE); \
-			dur.end(); \
-			if (msg.empty()) \
-				unified_out::error_out("found an empty message, please check your packer."); \
-			return do_sync_send_msg(msg); /*always send message even it's empty, this is very important*/ \
-		} \
+		auto_duration dur(ST_THIS stat.pack_time_sum); \
+		in_msg_type msg; \
+		ST_THIS packer_->pack_msg(msg, pstr, len, num, NATIVE); \
+		dur.end(); \
+		if (msg.empty()) \
+			unified_out::error_out("found an empty message, please check your packer."); \
+		return do_sync_send_msg(msg); /*always send message even it's empty, this is very important*/ \
 	} \
 	return 0; \
 } \
@@ -563,19 +560,13 @@ UDP_SEND_MSG_CALL_SWITCH(FUNNAME, bool)
 size_t FUNNAME(const char* const pstr[], const size_t len[], size_t num, bool can_overflow = false) {return FUNNAME(peer_addr, pstr, len, num, can_overflow);} \
 size_t FUNNAME(const boost::asio::ip::udp::endpoint& peer_addr, const char* const pstr[], const size_t len[], size_t num, bool can_overflow = false) \
 { \
-	if (!ST_THIS sending && !ST_THIS stopped() && ST_THIS is_ready()) \
+	if (ST_THIS lock_sending_flag()) \
 	{ \
-		scope_atomic_lock<> lock(ST_THIS send_atomic); \
-		if (!ST_THIS sending && lock.locked()) \
-		{ \
-			ST_THIS sending = true; \
-			lock.unlock(); \
-			in_msg_type msg(peer_addr); \
-			ST_THIS packer_->pack_msg(msg, pstr, len, num, NATIVE); \
-			if (msg.empty()) \
-				unified_out::error_out("found an empty message, please check your packer."); \
-			return do_sync_send_msg(peer_addr, msg); /*always send message even it's empty, this is very important*/ \
-		} \
+		in_msg_type msg(peer_addr); \
+		ST_THIS packer_->pack_msg(msg, pstr, len, num, NATIVE); \
+		if (msg.empty()) \
+			unified_out::error_out("found an empty message, please check your packer."); \
+		return do_sync_send_msg(peer_addr, msg); /*always send message even it's empty, this is very important*/ \
 	} \
 	return 0; \
 } \

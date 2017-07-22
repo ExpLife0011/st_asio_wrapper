@@ -250,6 +250,8 @@
  * i_server has been moved from st_asio_wrapper to st_asio_wrapper::tcp.
  *
  * HIGHLIGHT:
+ * Support decreasing (increasing already supported) the number of service thread at runtime by defining ST_ASIO_DECREASE_THREAD_AT_RUNTIME macro,
+ *  suggest to define ST_ASIO_AVOID_AUTO_STOP_SERVICE macro too.
  *
  * FIX:
  * Always directly shutdown ssl::client_socket_base if macro ST_ASIO_REUSE_SSL_STREAM been defined.
@@ -260,6 +262,8 @@
  * Optimized class obj_with_begin_time.
  * Not use sending buffer (send_msg_buffer) if possible.
  * Reduced stopped() invocation (because it needs locks).
+ * Introduced boost::asio::io_service::work (boost::asio::executor_work_guard) by defining ST_ASIO_AVOID_AUTO_STOP_SERVICE macro.
+ * Add function service_pump::service_thread_num to fetch the real number of service thread (must define ST_ASIO__DECREASE_THREAD_AT_RUNTIME macro).
  *
  * DELETION:
  *
@@ -525,6 +529,12 @@
 //I tried many ways, onle one way can make boost::asio::ssl::stream reusable, which is:
 // don't call any shutdown functions of boost::asio::ssl::stream, just call boost::asio::ip::tcp::socket's shutdown function,
 // this seems not a normal procedure, but it works, I believe that asio's defect caused this problem.
+
+//#define ST_ASIO_AVOID_AUTO_STOP_SERVICE
+//wrap service_pump with asio::io_service::work (asio::executor_work_guard), then it will never run out
+
+//#define ST_ASIO_DECREASE_THREAD_AT_RUNTIME
+//enable decreasing service thread at runtime.
 //configurations
 
 #endif /* ST_ASIO_CONFIG_H_ */

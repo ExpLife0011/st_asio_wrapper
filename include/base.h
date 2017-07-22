@@ -43,6 +43,7 @@ namespace st_asio_wrapper
 #if BOOST_VERSION >= 105300
 typedef boost::atomic_uint_fast64_t atomic_uint_fast64;
 typedef boost::atomic_size_t atomic_size_t;
+typedef boost::atomic_int_fast32_t atomic_int_fast32_t;
 #else
 template <typename T>
 class atomic
@@ -60,7 +61,9 @@ public:
 	T operator=(T value) {boost::lock_guard<boost::mutex> lock(data_mutex); return data = value;}
 	T exchange(T value, boost::memory_order) {boost::lock_guard<boost::mutex> lock(data_mutex); T pre_data = data; data = value; return pre_data;}
 	T fetch_add(T value, boost::memory_order) {boost::lock_guard<boost::mutex> lock(data_mutex); T pre_data = data; data += value; return pre_data;}
+	T fetch_sub(T value, boost::memory_order) {boost::lock_guard<boost::mutex> lock(data_mutex); T pre_data = data; data -= value; return pre_data;}
 	void store(T value, boost::memory_order) {boost::lock_guard<boost::mutex> lock(data_mutex); data = value;}
+	T load(boost::memory_order) const {return data;}
 
 	bool is_lock_free() const {return false;}
 	operator T() const {return data;}
@@ -71,6 +74,7 @@ private:
 };
 typedef atomic<boost::uint_fast64_t> atomic_uint_fast64;
 typedef atomic<size_t> atomic_size_t;
+typedef atomic<boost::int_fast32_t> atomic_int_fast32_t;
 #endif
 
 template<typename atomic_type = atomic_size_t>

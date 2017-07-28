@@ -34,8 +34,8 @@ private:
 protected:
 	enum link_status {CONNECTED, FORCE_SHUTTING_DOWN, GRACEFUL_SHUTTING_DOWN, BROKEN};
 
-	socket_base(boost::asio::io_service& io_service_) : super(io_service_) {first_init();}
-	template<typename Arg> socket_base(boost::asio::io_service& io_service_, Arg& arg) : super(io_service_, arg) {first_init();}
+	socket_base(boost::asio::io_context& io_context_) : super(io_context_) {first_init();}
+	template<typename Arg> socket_base(boost::asio::io_context& io_context_, Arg& arg) : super(io_context_, arg) {first_init();}
 
 	//helper function, just call it in constructor
 	void first_init() {status = BROKEN; unpacker_ = boost::make_shared<Unpacker>();}

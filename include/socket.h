@@ -32,8 +32,8 @@ public:
 	static const tid TIMER_END = TIMER_BEGIN + 10;
 
 protected:
-	socket(boost::asio::io_service& io_service_) : timer(io_service_), next_layer_(io_service_) {first_init();}
-	template<typename Arg> socket(boost::asio::io_service& io_service_, Arg& arg) : timer(io_service_), next_layer_(io_service_, arg) {first_init();}
+	socket(boost::asio::io_context& io_context_) : timer(io_context_), next_layer_(io_context_) {first_init();}
+	template<typename Arg> socket(boost::asio::io_context& io_context_, Arg& arg) : timer(io_context_), next_layer_(io_context_, arg) {first_init();}
 
 	//helper function, just call it in constructor
 	void first_init()
@@ -46,6 +46,9 @@ protected:
 		started_ = false;
 		last_send_time = 0;
 		last_recv_time = 0;
+		recv_idle_began = false;
+		msg_handling_interval_step1_ = ST_ASIO_MSG_HANDLING_INTERVAL_STEP1;
+		msg_handling_interval_step2_ = ST_ASIO_MSG_HANDLING_INTERVAL_STEP2;
 		send_atomic.store(0, boost::memory_order_relaxed);
 		dispatch_atomic.store(0, boost::memory_order_relaxed);
 		start_atomic.store(0, boost::memory_order_relaxed);
@@ -60,6 +63,7 @@ protected:
 		congestion_controlling = false;
 		last_recv_time = 0;
 		stat.reset();
+		recv_idle_began = false;
 	}
 
 	void clear_buffer()
@@ -135,8 +139,14 @@ public:
 	bool is_sending_msg() const {return sending;}
 	bool is_dispatching_msg() const {return dispatching;}
 
-	void congestion_control(bool enable) {congestion_controlling = enable;}
+	void congestion_control(bool enable) {congestion_controlling = enable;} //enable congestion controlling in on_msg, disable it in on_msg_handle, please note.
 	bool congestion_control() const {return congestion_controlling;}
+
+	void msg_handling_interval_step1(size_t interval) {msg_handling_interval_step1_ = interval;}
+	size_t msg_handling_interval_step1() const {return msg_handling_interval_step1_;}
+
+	void msg_handling_interval_step2(size_t interval) {msg_handling_interval_step2_ = interval;}
+	size_t msg_handling_interval_step2() const {return msg_handling_interval_step2_;}
 
 	//in st_asio_wrapper, it's thread safe to access stat without mutex, because for a specific member of stat, st_asio_wrapper will never access it concurrently.
 	//in other words, in a specific thread, st_asio_wrapper just access only one member of stat.
@@ -271,11 +281,24 @@ protected:
 		}
 
 		if (temp_msg_buffer.empty() && recv_msg_buffer.size() < ST_ASIO_MAX_MSG_NUM)
+		{
+			if (recv_idle_began)
+			{
+				recv_idle_began = false;
+				stat.recv_idle_sum += statistic::local_time() - recv_idle_begin_time;
+			}
+
 			do_recv_msg(); //receive msg in sequence
+		}
 		else
 		{
-			recv_idle_begin_time = statistic::local_time();
-			set_timer(TIMER_HANDLE_MSG, 50, boost::bind(&socket::timer_handler, this, _1));
+			if (!recv_idle_began)
+			{
+				recv_idle_began = true;
+				recv_idle_begin_time = statistic::local_time();
+			}
+
+			set_timer(TIMER_HANDLE_MSG, msg_handling_interval_step1_, boost::bind(&socket::timer_handler, this, _1));
 		}
 	}
 
@@ -348,7 +371,6 @@ private:
 		switch (id)
 		{
 		case TIMER_HANDLE_MSG:
-			stat.recv_idle_sum += statistic::local_time() - recv_idle_begin_time;
 			handle_msg();
 			break;
 		case TIMER_DISPATCH_MSG:
@@ -389,7 +411,7 @@ private:
 		{
 			last_dispatch_msg.restart(end_time);
 			dispatching = false;
-			set_timer(TIMER_DISPATCH_MSG, 50, boost::bind(&socket::timer_handler, this, _1));
+			set_timer(TIMER_DISPATCH_MSG, msg_handling_interval_step2_, boost::bind(&socket::timer_handler, this, _1));
 		}
 		else //dispatch msg in sequence
 		{
@@ -414,7 +436,7 @@ protected:
 	out_container_type recv_msg_buffer;
 	boost::container::list<out_msg> temp_msg_buffer;
 	//subclass will invoke handle_msg() when got some msgs. if these msgs can't be dispatched via on_msg() because of congestion control opened,
-	//socket will delay 50 milliseconds(non-blocking) to invoke handle_msg() again, temp_msg_buffer is used to hold these msgs temporarily.
+	//socket will delay 'msg_handling_interval_step1_' milliseconds(non-blocking) to invoke handle_msg() again, temp_msg_buffer is used to hold these msgs temporarily.
 
 	volatile bool sending;
 	atomic_size_t send_atomic;
@@ -429,9 +451,12 @@ protected:
 
 	struct statistic stat;
 	typename statistic::stat_time recv_idle_begin_time;
+	bool recv_idle_began;
 
 	//used by heartbeat function, subclass need to refresh them
 	time_t last_send_time, last_recv_time;
+
+	size_t msg_handling_interval_step1_, msg_handling_interval_step2_;
 };
 
 } //namespace

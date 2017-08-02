@@ -120,14 +120,6 @@ class echo_client : public multi_client_base<echo_socket>
 public:
 	echo_client(service_pump& service_pump_) : multi_client_base<echo_socket>(service_pump_) {}
 
-	statistic get_statistic()
-	{
-		statistic stat;
-		do_something_to_all(stat += boost::lambda::bind(&echo_socket::get_statistic, *boost::lambda::_1));
-
-		return stat;
-	}
-
 	void begin(size_t msg_num, const char* msg, size_t msg_len) {do_something_to_all(boost::bind(&echo_socket::begin, _1, msg_num, msg, msg_len));}
 };
 

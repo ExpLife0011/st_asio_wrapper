@@ -177,14 +177,6 @@ public:
 		return total_recv_bytes;
 	}
 
-	statistic get_statistic()
-	{
-		statistic stat;
-		do_something_to_all(stat += boost::lambda::bind(&echo_socket::get_statistic, *boost::lambda::_1));
-
-		return stat;
-	}
-
 	void clear_status() {do_something_to_all(boost::mem_fn(&echo_socket::clear_status));}
 	void begin(size_t msg_num, size_t msg_len, char msg_fill) {do_something_to_all(boost::bind(&echo_socket::begin, _1, msg_num, msg_len, msg_fill));}
 

@@ -292,11 +292,14 @@
  * Avoid decreasing the number of service thread to less than one.
  * Add a helper function object_pool::get_statistic.
  * Add another overload of function object_pool::invalid_object_pop.
+ * Introduce asio::defer to object, be careful to use it.
+ * Add link's break time and establish time to the statistic object.
  *
  * DELETION:
  * Drop useless variables which need macro ST_ASIO_DECREASE_THREAD_AT_RUNTIME to be defined.
  *
  * REFACTORING:
+ * Move variable last_send_time and last_recv_time from st_asio_wrapper::socket to st_asio_wrapper::socet::stat (a statistic object).
  *
  * REPLACEMENTS:
  * Always use io_context instead of io_service (before asio 1.11, io_context will be a typedef of io_service).

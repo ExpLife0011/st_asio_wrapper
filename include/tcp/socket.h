@@ -225,7 +225,7 @@ private:
 	{
 		if (!ec && bytes_transferred > 0)
 		{
-			ST_THIS last_recv_time = time(NULL);
+			ST_THIS stat.last_recv_time = time(NULL);
 
 			typename Unpacker::container_type temp_msg_can;
 			auto_duration dur(ST_THIS stat.unpack_time_sum);
@@ -257,7 +257,7 @@ private:
 	{
 		if (!ec)
 		{
-			ST_THIS last_send_time = time(NULL);
+			ST_THIS stat.last_send_time = time(NULL);
 
 			ST_THIS stat.send_byte_sum += bytes_transferred;
 			if (last_send_msg.empty()) //send message with sync mode

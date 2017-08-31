@@ -81,7 +81,7 @@ protected:
 	virtual bool do_start()
 	{
 		ST_THIS status = super::CONNECTED;
-		ST_THIS last_recv_time = time(NULL);
+		ST_THIS stat.last_recv_time = ST_THIS stat.establish_time = time(NULL);
 #if ST_ASIO_HEARTBEAT_INTERVAL > 0
 		ST_THIS start_heartbeat(ST_ASIO_HEARTBEAT_INTERVAL);
 #endif

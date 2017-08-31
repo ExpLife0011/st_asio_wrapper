@@ -61,7 +61,7 @@ public:
 		boost::function<bool (tid)> call_back; //return true from call_back to continue the timer, or the timer will stop
 		boost::shared_ptr<timer_type> timer;
 
-		timer_info() : seq(0), status(TIMER_FAKE), interval_ms(0) {}
+		timer_info() : seq(-1), status(TIMER_FAKE), interval_ms(0) {}
 	};
 
 	typedef const timer_info timer_cinfo;
@@ -134,7 +134,7 @@ protected:
 #else
 		ti.timer->expires_from_now(milliseconds(ti.interval_ms));
 #endif
-		ti.timer->async_wait(make_handler_error(boost::bind(&timer::timer_handler, this, boost::asio::placeholders::error, boost::ref(ti), ti.seq++)));
+		ti.timer->async_wait(make_handler_error(boost::bind(&timer::timer_handler, this, boost::asio::placeholders::error, boost::ref(ti), ++ti.seq)));
 	}
 
 	void stop_timer(timer_info& ti)
@@ -151,7 +151,7 @@ protected:
 		//return true from call_back to continue the timer, or the timer will stop
 		if (!ec && ti.call_back(ti.id) && timer_info::TIMER_OK == ti.status)
 			start_timer(ti);
-		else if (prev_seq == ti.seq)
+		else if (prev_seq == ti.seq) //exclude a particular situation--start the same timer in call_back and return false
 			ti.status = timer_info::TIMER_CANCELED;
 	}
 

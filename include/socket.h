@@ -44,8 +44,6 @@ protected:
 		dispatching = false;
 		congestion_controlling = false;
 		started_ = false;
-		last_send_time = 0;
-		last_recv_time = 0;
 		recv_idle_began = false;
 		msg_handling_interval_step1_ = ST_ASIO_MSG_HANDLING_INTERVAL_STEP1;
 		msg_handling_interval_step2_ = ST_ASIO_MSG_HANDLING_INTERVAL_STEP2;
@@ -61,7 +59,6 @@ protected:
 		sending = false;
 		dispatching = false;
 		congestion_controlling = false;
-		last_recv_time = 0;
 		stat.reset();
 		recv_idle_began = false;
 	}
@@ -123,13 +120,14 @@ public:
 	{
 		assert(interval > 0 && max_absence > 0);
 
-		if (last_recv_time > 0 && is_ready()) //check of last_recv_time is essential, because user may call check_heartbeat before do_start
+		if (stat.last_recv_time > 0 && is_ready()) //check of last_recv_time is essential, because user may call check_heartbeat before do_start
 		{
 			time_t now = time(NULL);
-			if (now - last_recv_time >= interval * max_absence)
-				return on_heartbeat_error();
+			if (now - stat.last_recv_time >= interval * max_absence)
+				if (!on_heartbeat_error())
+					return false;
 
-			if (!is_sending_msg() && now - last_send_time >= interval) //don't need to send heartbeat if we're sending messages
+			if (!is_sending_msg() && now - stat.last_send_time >= interval) //don't need to send heartbeat if we're sending messages
 				send_heartbeat();
 		}
 
@@ -247,6 +245,8 @@ protected:
 		{
 			boost::system::error_code ec;
 			lowest_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+
+			stat.break_time = time(NULL);
 		}
 
 		set_async_calling(true);
@@ -452,9 +452,6 @@ protected:
 	struct statistic stat;
 	typename statistic::stat_time recv_idle_begin_time;
 	bool recv_idle_began;
-
-	//used by heartbeat function, subclass need to refresh them
-	time_t last_send_time, last_recv_time;
 
 	size_t msg_handling_interval_step1_, msg_handling_interval_step2_;
 };

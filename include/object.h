@@ -34,6 +34,7 @@ public:
 
 	#if BOOST_ASIO_VERSION >= 101100
 	void post(const boost::function<void()>& handler) {boost::asio::post(io_context_, (async_call_indicator, boost::lambda::bind(boost::lambda::unlambda(handler))));}
+	void defer(const boost::function<void()>& handler) {boost::asio::defer(io_context_, (async_call_indicator, boost::lambda::bind(boost::lambda::unlambda(handler))));}
 	#else
 	void post(const boost::function<void()>& handler) {io_context_.post((async_call_indicator, boost::lambda::bind(boost::lambda::unlambda(handler))));}
 	#endif
@@ -52,6 +53,7 @@ protected:
 #else
 	#if BOOST_ASIO_VERSION >= 101100
 	template<typename F> void post(const F& handler) {boost::asio::post(io_context_, handler);}
+	template<typename F> void defer(const F& handler) {boost::asio::defer(io_context_, handler);}
 	#else
 	template<typename F> void post(const F& handler) {io_context_.post(handler);}
 	#endif

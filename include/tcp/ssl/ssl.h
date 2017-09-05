@@ -32,17 +32,13 @@ class socket : public Socket
 
 public:
 	template<typename Arg>
-	socket(Arg& arg, boost::asio::ssl::context& ctx) : Socket(arg, ctx), authorized_(false) {}
-
-	virtual void reset() {authorized_ = false;}
-	bool authorized() const {return authorized_;}
+	socket(Arg& arg, boost::asio::ssl::context& ctx) : Socket(arg, ctx) {}
 
 protected:
 	virtual void on_recv_error(const boost::system::error_code& ec)
 	{
-		if (is_ready())
+		if (ST_THIS is_ready())
 		{
-			authorized_ = false;
 #ifndef ST_ASIO_REUSE_SSL_STREAM
 			ST_THIS status = Socket::GRACEFUL_SHUTTING_DOWN;
 			ST_THIS show_info("ssl link:", "been shut down.");
@@ -67,13 +63,12 @@ protected:
 
 	void shutdown_ssl(bool sync = true)
 	{
-		if (!is_ready())
+		if (!ST_THIS is_ready())
 		{
 			Socket::force_shutdown();
 			return;
 		}
 
-		authorized_ = false;
 		ST_THIS status = Socket::GRACEFUL_SHUTTING_DOWN;
 
 		if (!sync)
@@ -98,9 +93,6 @@ private:
 		if (ec && boost::asio::error::eof != ec) //the endpoint who initiated a shutdown will get error eof.
 			unified_out::info_out("async shutdown ssl link failed (maybe intentionally because of reusing)");
 	}
-
-protected:
-	volatile bool authorized_;
 };
 
 template <typename Packer, typename Unpacker, typename Socket = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>,
@@ -114,11 +106,8 @@ private:
 public:
 	client_socket_base(boost::asio::io_context& io_context_, boost::asio::ssl::context& ctx) : super(io_context_, ctx) {}
 
+#ifndef ST_ASIO_REUSE_SSL_STREAM
 	void disconnect(bool reconnect = false) {force_shutdown(reconnect);}
-#ifdef ST_ASIO_REUSE_SSL_STREAM
-	void force_shutdown(bool reconnect = false) {ST_THIS authorized_ = false; super::force_shutdown(reconnect);}
-	void graceful_shutdown(bool reconnect = false, bool sync = true) {ST_THIS authorized_ = false; super::graceful_shutdown(reconnect, sync);}
-#else
 	void force_shutdown(bool reconnect = false) {graceful_shutdown(reconnect);}
 	void graceful_shutdown(bool reconnect = false, bool sync = true)
 	{
@@ -144,7 +133,7 @@ protected:
 	virtual int prepare_reconnect(const boost::system::error_code& ec) {return -1;}
 	virtual void on_recv_error(const boost::system::error_code& ec) {ST_THIS need_reconnect = false; super::on_recv_error(ec);}
 #endif
-	virtual void on_unpack_error() {unified_out::info_out("can not unpack msg."); force_shutdown();}
+	virtual void on_unpack_error() {unified_out::info_out("can not unpack msg."); ST_THIS force_shutdown();}
 
 private:
 	void handle_handshake(const boost::system::error_code& ec)
@@ -152,12 +141,9 @@ private:
 		ST_THIS on_handshake(ec);
 
 		if (!ec)
-		{
-			ST_THIS authorized_ = true;
 			super::connect_handler(ec); //return to tcp::client_socket_base::connect_handler
-		}
 		else
-			force_shutdown();
+			ST_THIS force_shutdown();
 	}
 };
 
@@ -190,11 +176,8 @@ private:
 public:
 	server_socket_base(Server& server_, boost::asio::ssl::context& ctx) : super(server_, ctx) {}
 
+#ifndef ST_ASIO_REUSE_SSL_STREAM
 	void disconnect() {force_shutdown();}
-#ifdef ST_ASIO_REUSE_SSL_STREAM
-	void force_shutdown() {ST_THIS authorized_ = false; super::force_shutdown();}
-	void graceful_shutdown(bool sync = false) {ST_THIS authorized_ = false; super::graceful_shutdown(sync);}
-#else
 	void force_shutdown() {graceful_shutdown();} //must with async mode (the default value), because server_base::uninit will call this function
 	void graceful_shutdown(bool sync = false) {ST_THIS shutdown_ssl(sync);}
 #endif
@@ -202,14 +185,12 @@ public:
 protected:
 	virtual bool do_start() //intercept tcp::server_socket_base::do_start (to add handshake)
 	{
-		assert(!ST_THIS authorized());
-
 			ST_THIS next_layer().async_handshake(boost::asio::ssl::stream_base::server,
 				ST_THIS make_handler_error(boost::bind(&server_socket_base::handle_handshake, this, boost::asio::placeholders::error)));
 		return true;
 	}
 
-	virtual void on_unpack_error() {unified_out::info_out("can not unpack msg."); force_shutdown();}
+	virtual void on_unpack_error() {unified_out::info_out("can not unpack msg."); ST_THIS force_shutdown();}
 
 private:
 	void handle_handshake(const boost::system::error_code& ec)
@@ -217,10 +198,7 @@ private:
 		ST_THIS on_handshake(ec);
 
 		if (!ec)
-		{
-			ST_THIS authorized_ = true;
 			super::do_start(); //return to tcp::server_socket_base::do_start
-		}
 		else
 			this->server.del_socket(ST_THIS shared_from_this());
 	}

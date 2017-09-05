@@ -280,6 +280,7 @@
  *
  * SPECIAL ATTENTION (incompatible with old editions):
  * Function object_pool::invalid_object_pop only pop obsoleted objects with no additional reference.
+ * socket::stat.last_recv_time will not be updated before tcp::socket_base::on_connect anymore.
  *
  * HIGHLIGHT:
  *
@@ -300,6 +301,8 @@
  *
  * REFACTORING:
  * Move variable last_send_time and last_recv_time from st_asio_wrapper::socket to st_asio_wrapper::socet::stat (a statistic object).
+ * Move common operations in client_socket_base::do_start and server_socket_base::do_start to tcp::socket_base::do_start and socket::do_start.
+ * Move virtual function client_socket_base::on_connect to tcp::socket_base, so server_socket_base will have it too.
  *
  * REPLACEMENTS:
  * Always use io_context instead of io_service (before asio 1.11, io_context will be a typedef of io_service).

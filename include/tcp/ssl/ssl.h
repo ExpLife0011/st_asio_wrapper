@@ -66,8 +66,6 @@ protected:
 			unified_out::error_out("handshake failed: %s", ec.message().data());
 	}
 
-	void handle_handshake(const boost::system::error_code& ec) {on_handshake(ec); if (!ec) {authorized_ = true; Socket::do_start();}}
-
 	void shutdown_ssl(bool sync = true)
 	{
 		if (!is_ready())
@@ -134,15 +132,13 @@ public:
 #endif
 
 protected:
-	virtual bool do_start() //add handshake
+	virtual void connect_handler(const boost::system::error_code& ec) //intercept tcp::client_socket_base::connect_handler
 	{
-		if (!ST_THIS is_connected())
-			super::do_start();
-		else if (!ST_THIS authorized())
+		if (!ec)
 			ST_THIS next_layer().async_handshake(boost::asio::ssl::stream_base::client,
 				ST_THIS make_handler_error(boost::bind(&client_socket_base::handle_handshake, this, boost::asio::placeholders::error)));
-
-		return true;
+		else
+			super::connect_handler(ec);
 	}
 
 #ifndef ST_ASIO_REUSE_SSL_STREAM
@@ -152,7 +148,18 @@ protected:
 	virtual void on_unpack_error() {unified_out::info_out("can not unpack msg."); force_shutdown();}
 
 private:
-	void handle_handshake(const boost::system::error_code& ec) {super::handle_handshake(ec); if (ec) force_shutdown();}
+	void handle_handshake(const boost::system::error_code& ec)
+	{
+		ST_THIS on_handshake(ec);
+
+		if (!ec)
+		{
+			ST_THIS authorized_ = true;
+			super::connect_handler(ec); //return to tcp::client_socket_base::connect_handler
+		}
+		else
+			force_shutdown();
+	}
 };
 
 template<typename Object>
@@ -184,30 +191,40 @@ private:
 public:
 	server_socket_base(Server& server_, boost::asio::ssl::context& ctx) : super(server_, ctx) {}
 
-#ifdef ST_ASIO_REUSE_SSL_STREAM
 	void disconnect() {force_shutdown();}
+#ifdef ST_ASIO_REUSE_SSL_STREAM
 	void force_shutdown() {ST_THIS authorized_ = false; super::force_shutdown();}
 	void graceful_shutdown(bool sync = false) {ST_THIS authorized_ = false; super::graceful_shutdown(sync);}
 #else
-	void disconnect() {force_shutdown();}
 	void force_shutdown() {graceful_shutdown();} //must with async mode (the default value), because server_base::uninit will call this function
 	void graceful_shutdown(bool sync = false) {ST_THIS shutdown_ssl(sync);}
 #endif
 
 protected:
-	virtual bool do_start() //add handshake
+	virtual bool do_start() //intercept tcp::server_socket_base::do_start (to add handshake)
 	{
-		if (!ST_THIS authorized())
+		assert(!ST_THIS authorized());
+
 			ST_THIS next_layer().async_handshake(boost::asio::ssl::stream_base::server,
 				ST_THIS make_handler_error(boost::bind(&server_socket_base::handle_handshake, this, boost::asio::placeholders::error)));
-
 		return true;
 	}
 
 	virtual void on_unpack_error() {unified_out::info_out("can not unpack msg."); force_shutdown();}
 
 private:
-	void handle_handshake(const boost::system::error_code& ec) {super::handle_handshake(ec); if (ec) this->server.del_socket(ST_THIS shared_from_this());}
+	void handle_handshake(const boost::system::error_code& ec)
+	{
+		ST_THIS on_handshake(ec);
+
+		if (!ec)
+		{
+			ST_THIS authorized_ = true;
+			super::do_start(); //return to tcp::server_socket_base::do_start
+		}
+		else
+			this->server.del_socket(ST_THIS shared_from_this());
+	}
 };
 
 template<typename Socket, typename Pool = object_pool<Socket>, typename Server = tcp::i_server> class server_base : public tcp::server_base<Socket, Pool, Server>

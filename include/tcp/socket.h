@@ -141,6 +141,15 @@ protected:
 		return ec ? -1 : send_size;
 	}
 
+	virtual bool do_start()
+	{
+		status = CONNECTED;
+		ST_THIS stat.establish_time = time(NULL);
+
+		on_connect(); //in this virtual function, this->stat.last_recv_time has not been updated, please note
+		return super::do_start();
+	}
+
 	//return false if send buffer is empty
 	virtual bool do_send_msg()
 	{
@@ -196,6 +205,7 @@ protected:
 			ST_THIS make_handler_error_size(boost::bind(&socket_base::recv_handler, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)));
 	}
 
+	virtual void on_connect() {}
 	//msg can not be unpacked
 	//the link is still available, so don't need to shutdown this tcp::socket_base at both client and server endpoint
 	virtual void on_unpack_error() = 0;
@@ -294,7 +304,7 @@ private:
 
 	bool async_shutdown_handler(size_t loop_num)
 	{
-		if (GRACEFUL_SHUTTING_DOWN == ST_THIS status)
+		if (GRACEFUL_SHUTTING_DOWN == status)
 		{
 			--loop_num;
 			if (loop_num > 0)

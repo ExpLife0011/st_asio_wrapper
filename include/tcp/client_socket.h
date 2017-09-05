@@ -100,20 +100,20 @@ public:
 	}
 
 protected:
-	virtual bool do_start() //connect or receive
+	virtual bool do_start() //connect
 	{
-		if (!ST_THIS is_connected())
-			ST_THIS lowest_layer().async_connect(server_addr, ST_THIS make_handler_error(boost::bind(&client_socket_base::connect_handler, this, boost::asio::placeholders::error)));
-		else
-		{
-#if ST_ASIO_HEARTBEAT_INTERVAL > 0
-			ST_THIS start_heartbeat(ST_ASIO_HEARTBEAT_INTERVAL);
-#endif
-			ST_THIS send_msg(); //send buffer may have msgs, send them
-			ST_THIS do_recv_msg();
-		}
+		assert(!ST_THIS is_connected());
 
+		ST_THIS lowest_layer().async_connect(server_addr, ST_THIS make_handler_error(boost::bind(&client_socket_base::connect_handler, this, boost::asio::placeholders::error)));
 		return true;
+	}
+
+	virtual void connect_handler(const boost::system::error_code& ec)
+	{
+		if (!ec) //already started, so cannot call start()
+			super::do_start();
+		else
+			prepare_next_reconnect(ec);
 	}
 
 	//after how much time(ms), client_socket_base will try to reconnect to the server, negative value means give up.
@@ -160,20 +160,6 @@ protected:
 		}
 
 		return false;
-	}
-
-private:
-	void connect_handler(const boost::system::error_code& ec)
-	{
-		if (!ec)
-		{
-			ST_THIS status = super::CONNECTED;
-			ST_THIS stat.last_recv_time = ST_THIS stat.establish_time = time(NULL);
-			on_connect();
-			do_start();
-		}
-		else
-			prepare_next_reconnect(ec);
 	}
 
 protected:

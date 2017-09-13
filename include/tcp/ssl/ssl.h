@@ -45,7 +45,7 @@ protected:
 			boost::system::error_code ec;
 			ST_THIS next_layer().shutdown(ec);
 
-			if (ec && boost::asio::error::eof != ec) //the endpoint who initiated a shutdown will get error eof.
+			if (ec && boost::asio::error::eof != ec) //the endpoint who initiated a shutdown operation will get error eof.
 				unified_out::info_out("shutdown ssl link failed (maybe intentionally because of reusing)");
 #endif
 		}
@@ -82,7 +82,7 @@ protected:
 			boost::system::error_code ec;
 			ST_THIS next_layer().shutdown(ec);
 
-			if (ec && boost::asio::error::eof != ec) //the endpoint who initiated a shutdown will get error eof.
+			if (ec && boost::asio::error::eof != ec) //the endpoint who initiated a shutdown operation will get error eof.
 				unified_out::info_out("shutdown ssl link failed (maybe intentionally because of reusing)");
 		}
 	}
@@ -90,7 +90,7 @@ protected:
 private:
 	void async_shutdown_handler(const boost::system::error_code& ec)
 	{
-		if (ec && boost::asio::error::eof != ec) //the endpoint who initiated a shutdown will get error eof.
+		if (ec && boost::asio::error::eof != ec) //the endpoint who initiated a shutdown operation will get error eof.
 			unified_out::info_out("async shutdown ssl link failed (maybe intentionally because of reusing)");
 	}
 };

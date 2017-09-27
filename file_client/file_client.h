@@ -228,7 +228,7 @@ private:
 			return true;
 
 		double used_time = (double) begin_time.elapsed().wall / 1000000000;
-		printf("\r100%\nend, speed: %f MBps.\n", file_size / used_time / 1024 / 1024);
+		printf("\r100%%\nend, speed: %f MBps.\n", file_size / used_time / 1024 / 1024);
 		return false;
 	}
 

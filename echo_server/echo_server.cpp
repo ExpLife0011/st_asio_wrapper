@@ -171,14 +171,9 @@ public:
 	normal_socket(i_server& server_) : normal_socket_base(server_) {}
 
 protected:
-	virtual bool do_start()
-	{
-		//demo client needs heartbeat (macro ST_ASIO_HEARTBEAT_INTERVAL been defined), pleae note that the interval (here is 5) must be equal to
-		//macro ST_ASIO_HEARTBEAT_INTERVAL defined in demo client, and macro ST_ASIO_HEARTBEAT_MAX_ABSENCE must has the same value as demo client's.
-		start_heartbeat(5);
-
-		return normal_socket_base::do_start();
-	}
+	//demo client needs heartbeat (macro ST_ASIO_HEARTBEAT_INTERVAL been defined), pleae note that the interval (here is 5) must be equal to
+	//macro ST_ASIO_HEARTBEAT_INTERVAL defined in demo client, and macro ST_ASIO_HEARTBEAT_MAX_ABSENCE must has the same value as demo client's.
+	virtual void on_connect() {start_heartbeat(5);}
 };
 #endif
 

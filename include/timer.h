@@ -129,11 +129,7 @@ protected:
 	{
 		assert(timer_info::TIMER_OK == ti.status);
 
-#if BOOST_ASIO_VERSION >= 101100
-		ti.timer->expires_after(milliseconds(ti.interval_ms));
-#else
 		ti.timer->expires_from_now(milliseconds(ti.interval_ms));
-#endif
 		ti.timer->async_wait(make_handler_error(boost::bind(&timer::timer_handler, this, boost::asio::placeholders::error, boost::ref(ti), ++ti.seq)));
 	}
 

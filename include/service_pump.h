@@ -67,7 +67,7 @@ public:
 #endif
 #ifdef ST_ASIO_AVOID_AUTO_STOP_SERVICE
 #if BOOST_ASIO_VERSION >= 101100
-		, work(boost::asio::make_work_guard(boost::ref(*this)))
+		, work(boost::asio::make_work_guard(get_executor()))
 #else
 		, work(boost::make_shared<boost::asio::io_service::work>(boost::ref(*this)))
 #endif
@@ -298,7 +298,7 @@ protected:
 #endif
 
 #ifdef ST_ASIO_AVOID_AUTO_STOP_SERVICE
-#if ASIO_VERSION >= 101100
+#if BOOST_ASIO_VERSION >= 101100
 	boost::asio::executor_work_guard<executor_type> work;
 #else
 	boost::shared_ptr<boost::asio::io_service::work> work;

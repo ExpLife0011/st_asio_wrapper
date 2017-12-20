@@ -67,7 +67,7 @@ public:
 #endif
 #ifdef ST_ASIO_AVOID_AUTO_STOP_SERVICE
 #if BOOST_ASIO_VERSION >= 101100
-		, work(boost::asio::make_work_guard(get_executor()))
+		, work(get_executor())
 #else
 		, work(boost::make_shared<boost::asio::io_service::work>(boost::ref(*this)))
 #endif

@@ -64,6 +64,34 @@ public:
 	bool is_connected() const {return CONNECTED == status;}
 	bool is_shutting_down() const {return FORCE_SHUTTING_DOWN == status || GRACEFUL_SHUTTING_DOWN == status;}
 
+	void show_info(const char* head, const char* tail) const
+	{
+		boost::system::error_code ec;
+		BOOST_AUTO(local_ep, ST_THIS lowest_layer().local_endpoint(ec));
+		if (!ec)
+		{
+			BOOST_AUTO(remote_ep, ST_THIS lowest_layer().remote_endpoint(ec));
+			if (!ec)
+				unified_out::info_out("%s (%s:%hu %s:%hu) %s", head,
+					local_ep.address().to_string().data(), local_ep.port(),
+					remote_ep.address().to_string().data(), remote_ep.port(), tail);
+		}
+	}
+
+	void show_info(const char* head, const char* tail, const boost::system::error_code& ec) const
+	{
+		boost::system::error_code ec2;
+		BOOST_AUTO(local_ep, ST_THIS lowest_layer().local_endpoint(ec2));
+		if (!ec2)
+		{
+			BOOST_AUTO(remote_ep, ST_THIS lowest_layer().remote_endpoint(ec2));
+			if (!ec2)
+				unified_out::info_out("%s (%s:%hu %s:%hu) %s (%d %s)", head,
+					local_ep.address().to_string().data(), local_ep.port(),
+					remote_ep.address().to_string().data(), remote_ep.port(), tail, ec.value(), ec.message().data());
+		}
+	}
+
 	//get or change the unpacker at runtime
 	//changing unpacker at runtime is not thread-safe, this operation can only be done in on_msg(), reset() or constructor, please pay special attention
 	//we can resolve this defect via mutex, but i think it's not worth, because this feature is not frequently used

@@ -331,6 +331,31 @@
  *
  * REPLACEMENTS:
  *
+ * ===============================================================
+ * 2017.12.25	version 2.0.4
+ *
+ * SPECIAL ATTENTION (incompatible with old editions):
+ *
+ * HIGHLIGHT:
+ * Support boost-1.66
+ *
+ * FIX:
+ * Fix race condition when controlling the number of service thread at runtime.
+ * Fix compiler warnings.
+ *
+ * ENHANCEMENTS:
+ * Add verification for object allocation.
+ * Add log if stop_timer failed.
+ * Hide variable server in server_socket_base, use get_server function instead.
+ * A boolean value instead of void will be returned from set_timer and update_timer_info.
+ *
+ * DELETION:
+ *
+ * REFACTORING:
+ * Move function show_info from server_socket_base and client_socket_base to tcp::show_info.
+ *
+ * REPLACEMENTS:
+ *
  */
 
 #ifndef ST_ASIO_CONFIG_H_
@@ -340,8 +365,8 @@
 # pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#define ST_ASIO_VER		20003	//[x]xyyzz -> [x]x.[y]y.[z]z
-#define ST_ASIO_VERSION	"2.0.3"
+#define ST_ASIO_VER		20004	//[x]xyyzz -> [x]x.[y]y.[z]z
+#define ST_ASIO_VERSION	"2.0.4"
 
 //boost and compiler check
 #ifdef _MSC_VER

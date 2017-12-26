@@ -608,7 +608,7 @@ namespace boost {namespace asio {typedef io_service io_context;}}
 
 //#define ST_ASIO_REUSE_SSL_STREAM
 //if you need ssl::client_socket_base to be able to reconnect the server, or to open object pool in ssl::object_pool, you must define this macro.
-//I tried many ways, onle one way can make boost::asio::ssl::stream reusable, which is:
+//I tried many ways, only one way can make boost::asio::ssl::stream reusable, which is:
 // don't call any shutdown functions of boost::asio::ssl::stream, just call boost::asio::ip::tcp::socket's shutdown function,
 // this seems not a normal procedure, but it works, I believe that asio's defect caused this problem.
 
